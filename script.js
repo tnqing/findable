@@ -45,6 +45,8 @@ const searchInput = document.getElementById('content-search');
 const addLinkBtn = document.getElementById('add-link-btn');
 const saveLinkBtn = document.getElementById('save-link-btn');
 const newLinkInput = document.getElementById('new-link-url');
+const newImageInput = document.getElementById('new-image-upload');
+const fileNameDisplay = document.getElementById('file-name-display');
 
 let selectedItems = new Set();
 let currentCategory = "";
@@ -113,49 +115,105 @@ async function fetchTitle(url) {
 
 saveLinkBtn.addEventListener('click', async () => {
     const url = newLinkInput.value.trim();
-    if (!url) return;
+    const file = newImageInput.files[0];
+
+    if (!url && !file) return;
 
     const originalText = saveLinkBtn.textContent;
-    saveLinkBtn.textContent = "제목 불러오는 중...";
+    saveLinkBtn.textContent = "저장 중...";
     saveLinkBtn.disabled = true;
 
-    // Platform & Basic logic
-    let platform = "Web";
-    let thumb = `https://via.placeholder.com/400x225/f1f5f9/94a3b8?text=New+Link`;
-
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        platform = "YouTube";
-        const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
-        if (videoId) thumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-    } else if (url.includes('instagram.com')) {
-        platform = "Instagram";
-    }
-
-    let title = await fetchTitle(url);
-    
-    if (!title) {
-        if (platform === "YouTube") title = "YouTube 영상";
-        else if (platform === "Instagram") title = "Instagram 게시물";
-        else title = url;
-    }
-
     if (!storedContents[currentCategory]) storedContents[currentCategory] = [];
-    
-    storedContents[currentCategory].push({
-        title: title,
-        url: url,
-        platform: platform,
-        thumbnail: thumb,
-        clicks: 0
-    });
+
+    if (file) {
+        try {
+            const base64Image = await resizeImage(file, 800);
+            storedContents[currentCategory].push({
+                title: file.name.split('.')[0] || "화면 캡처 이미지",
+                url: base64Image,
+                platform: "Image",
+                thumbnail: base64Image,
+                clicks: 0
+            });
+        } catch (e) {
+            console.error("Image process error", e);
+        }
+    } else if (url) {
+        // Platform & Basic logic
+        let platform = "Web";
+        let thumb = `https://via.placeholder.com/400x225/f1f5f9/94a3b8?text=New+Link`;
+
+        if (url.includes('youtube.com') || url.includes('youtu.be')) {
+            platform = "YouTube";
+            const videoId = url.split('v=')[1]?.split('&')[0] || url.split('/').pop();
+            if (videoId) thumb = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+        } else if (url.includes('instagram.com')) {
+            platform = "Instagram";
+        }
+
+        let title = await fetchTitle(url);
+        
+        if (!title) {
+            if (platform === "YouTube") title = "YouTube 영상";
+            else if (platform === "Instagram") title = "Instagram 게시물";
+            else title = url;
+        }
+
+        storedContents[currentCategory].push({
+            title: title,
+            url: url,
+            platform: platform,
+            thumbnail: thumb,
+            clicks: 0
+        });
+    }
 
     saveContents();
     renderContentSections(searchInput.value);
     
     newLinkInput.value = "";
+    newImageInput.value = "";
+    fileNameDisplay.textContent = "클릭하여 이미지 선택";
     saveLinkBtn.textContent = originalText;
     saveLinkBtn.disabled = false;
     addLinkOverlay.classList.remove('active');
+});
+
+// Helper: Resize Image for LocalStorage
+function resizeImage(file, maxWidth = 800) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.8));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+newImageInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        fileNameDisplay.textContent = file.name;
+    } else {
+        fileNameDisplay.textContent = '클릭하여 이미지 선택';
+    }
 });
 
 function renderSelected() {
