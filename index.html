@@ -17,21 +17,123 @@
     <div class="bg-gradient"></div>
     <div class="glow-sphere"></div>
 
-    <main class="container">
-        <div class="glass-card" id="main-content">
-            <h1 class="hero-text" id="findable-text">
-                <span style="--i:0">f</span>
-                <span style="--i:1">i</span>
-                <span style="--i:2">n</span>
-                <span style="--i:3">d</span>
-                <span style="--i:4">a</span>
-                <span style="--i:5">b</span>
-                <span style="--i:6">l</span>
-                <span style="--i:7">e</span>
-            </h1>
-            <div class="shimmer"></div>
-        </div>
-    </main>
+    <div class="page-wrapper">
+        <header class="main-header">
+            <div class="header-top">
+                <div class="header-actions">
+                    <div class="icon-btn profile-btn" title="Profile Settings">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round"><path d="M18 20a6 6 0 0 0-12 0"/><circle cx="12" cy="10" r="4"/><circle cx="12" cy="12" r="10"/></svg>
+                    </div>
+                    <div class="icon-btn menu-btn" title="Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-menu"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                    </div>
+                </div>
+            </div>
+            <div class="header-bottom">
+                <div class="header-bottom-content">
+                    <button class="icon-btn back-btn" id="header-back-btn" title="Back to Main">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left"><path d="m15 18-6-6 6-6"/></svg>
+                    </button>
+                    <span class="header-label" id="main-guidance-msg">아래 설정 버튼을 눌러 최대 10개의 최애 카테고리를 설정해두시면 더 간편한 생활이 가능해집니다 :)</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="container">
+            <div class="content-center">
+                <div class="glass-card" id="main-content">
+                    <h1 class="hero-text" id="findable-text">
+                        <span style="--i:0">f</span>
+                        <span style="--i:1">i</span>
+                        <span style="--i:2">n</span>
+                        <span style="--i:3">d</span>
+                        <span style="--i:4">a</span>
+                        <span style="--i:5">b</span>
+                        <span style="--i:6">l</span>
+                        <span style="--i:7">e</span>
+                    </h1>
+                    <div class="shimmer"></div>
+                </div>
+
+                <div class="settings-trigger-wrapper">
+                    <button class="icon-btn settings-trigger" id="open-categories" title="Configure Categories">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+
+                <div class="selected-categories-display" id="selected-display">
+                    <!-- Selected categories will appear here in two rows -->
+                </div>
+            </div>
+
+            <!-- Category Selection Modal (Glassmorphism) -->
+            <div class="category-modal-overlay" id="category-overlay">
+                <div class="glass-card category-modal" id="category-box">
+                    <h2 class="modal-title">카테고리 고르기</h2>
+                    <p class="modal-subtitle">최대 10개까지 선택할 수 있습니다.</p>
+                    <div class="category-grid" id="category-grid">
+                        <!-- Categories injected via JS -->
+                    </div>
+                    <div class="modal-footer">
+                        <button class="submit-btn" id="submit-categories" disabled>Submit</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content View Modal -->
+            <div class="content-modal-overlay" id="content-overlay">
+                <div class="glass-card content-modal" id="content-box">
+                    <div class="content-modal-header">
+                        <div class="header-left">
+                            <span id="modal-category-name" class="selection-tag title-tag"></span>
+                            <button class="icon-btn add-btn" id="add-link-btn" title="링크 추가하기">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                            </button>
+                        </div>
+                        <div class="search-wrapper">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                            <input type="text" id="content-search" placeholder="저장된 링크 검색...">
+                        </div>
+                    </div>
+
+                    <div class="content-scroll-area">
+                        <!-- Top 10 Most Visited Section -->
+                        <section class="content-section">
+                            <h3 class="section-title">자주 찾는 링크 <span class="count-badge">Top 10</span></h3>
+                            <div class="top-grid" id="top-links-grid">
+                                <!-- Top 10 grid items injected via JS -->
+                            </div>
+                        </section>
+
+                        <!-- All Links List Section -->
+                        <section class="content-section">
+                            <h3 class="section-title">모든 저장 목록</h3>
+                            <div class="links-list" id="all-links-list">
+                                <!-- List items injected via JS -->
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+            <!-- Add Link Modal -->
+            <div class="add-link-overlay detail-modal-overlay" id="add-link-overlay">
+                <div class="glass-card add-link-modal" id="add-link-box">
+                    <h2 class="modal-title">링크 추가하기</h2>
+                    <p class="modal-subtitle">저장하고 싶은 웹사이트나 영상의 주소를 입력하세요.</p>
+                    <div class="input-group">
+                        <input type="text" id="new-link-url" placeholder="https://example.com" autocomplete="off">
+                    </div>
+                    <div class="modal-footer">
+                        <button class="submit-btn" id="save-link-btn">Save Link</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="main-footer">
+            <p>&copy; 2026 Findable</p>
+        </footer>
+    </div>
 
     <script src="script.js"></script>
 </body>
