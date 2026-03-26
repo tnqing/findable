@@ -262,8 +262,8 @@ body {
 /* Updated Top Grid (Top 10) */
 .top-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1.2rem;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 1rem;
 }
 
 /* Links List (Full List) */
@@ -789,27 +789,27 @@ body {
 
 .platform-badge {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    padding: 6px 12px;
-    border-radius: 20px;
+    top: 8px;
+    right: 8px;
+    padding: 4px 8px;
+    border-radius: 12px;
     background: rgba(0,0,0,0.6);
     color: white;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     backdrop-filter: blur(4px);
     z-index: 1;
 }
 
 .card-info {
-    padding: 1.5rem;
+    padding: 1rem;
 }
 
 .card-title {
-    font-size: 1rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    line-height: 1.4;
-    margin-bottom: 0.8rem;
+    line-height: 1.35;
+    margin-bottom: 0.5rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
@@ -988,10 +988,10 @@ body {
 /* Actions (Edit/Delete) overlay */
 .card-actions {
     position: absolute;
-    top: 12px;
-    left: 12px;
+    top: 8px;
+    left: 8px;
     display: flex;
-    gap: 6px;
+    gap: 4px;
     opacity: 0;
     transition: opacity 0.2s ease;
     z-index: 10;
@@ -1016,7 +1016,7 @@ body {
     background: rgba(255, 255, 255, 0.85);
     border: none;
     border-radius: 6px;
-    padding: 6px;
+    padding: 5px;
     cursor: pointer;
     backdrop-filter: blur(4px);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
