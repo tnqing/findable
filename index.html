@@ -140,7 +140,30 @@
                     </div>
                 </div>
             </div>
+
+            <!-- AI Settings Modal -->
+            <div class="add-link-overlay detail-modal-overlay" id="ai-settings-overlay">
+                <div class="glass-card add-link-modal" id="ai-settings-box">
+                    <h2 class="modal-title" style="display: flex; align-items: center; gap: 0.5rem;">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+                        AI 제목 자동완성
+                    </h2>
+                    <p class="modal-subtitle">사진 내용과 웹사이트를 이해하고 똑똑한 제목을 달아주기 위해 Gemini API 키가 필요합니다.</p>
+                    <div class="input-group">
+                        <label class="input-label">Gemini API Key</label>
+                        <input type="password" id="ai-api-key" placeholder="AI-XXXXXXXXXXXXXXXXXXXXXXX">
+                    </div>
+                    <div class="modal-footer">
+                        <button class="submit-btn" id="save-ai-key-btn">키 저장하기</button>
+                    </div>
+                </div>
+            </div>
         </main>
+
+        <!-- AI Settings Trigger Button (Floating Bottom Right) -->
+        <button class="icon-btn ai-settings-trigger" id="ai-settings-btn" title="AI 설정">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+        </button>
 
         <footer class="main-footer">
             <p>&copy; 2026 Findable</p>

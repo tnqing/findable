@@ -48,6 +48,26 @@ const newLinkInput = document.getElementById('new-link-url');
 const newImageInput = document.getElementById('new-image-upload');
 const fileNameDisplay = document.getElementById('file-name-display');
 
+const aiSettingsBtn = document.getElementById('ai-settings-btn');
+const aiSettingsOverlay = document.getElementById('ai-settings-overlay');
+const saveAiKeyBtn = document.getElementById('save-ai-key-btn');
+const aiApiKeyInput = document.getElementById('ai-api-key');
+
+function getApiKey() {
+    return localStorage.getItem('findable_gemini_key') || "";
+}
+
+aiSettingsBtn.addEventListener('click', () => {
+    aiApiKeyInput.value = getApiKey();
+    aiSettingsOverlay.classList.add('active');
+});
+aiSettingsOverlay.addEventListener('click', (e) => { e.target === aiSettingsOverlay && aiSettingsOverlay.classList.remove('active') });
+saveAiKeyBtn.addEventListener('click', () => {
+    localStorage.setItem('findable_gemini_key', aiApiKeyInput.value.trim());
+    aiSettingsOverlay.classList.remove('active');
+    alert("AI 키가 저장되었습니다! 이제 제목이 똑똑하게 달립니다 ✨");
+});
+
 let selectedItems = new Set();
 let currentCategory = "";
 
@@ -128,8 +148,16 @@ saveLinkBtn.addEventListener('click', async () => {
     if (file) {
         try {
             const base64Image = await resizeImage(file, 800);
+            let title = file.name.split('.')[0] || "화면 캡처 이미지";
+            
+            if (getApiKey()) {
+                saveLinkBtn.textContent = "AI가 사진 분석 중...";
+                const aiTitle = await analyzeWithGemini(base64Image, 'image');
+                if (aiTitle) title = aiTitle;
+            }
+
             storedContents[currentCategory].push({
-                title: file.name.split('.')[0] || "화면 캡처 이미지",
+                title: title,
                 url: base64Image,
                 platform: "Image",
                 thumbnail: base64Image,
@@ -151,12 +179,19 @@ saveLinkBtn.addEventListener('click', async () => {
             platform = "Instagram";
         }
 
-        let title = await fetchTitle(url);
+        let rawTitle = await fetchTitle(url);
         
-        if (!title) {
-            if (platform === "YouTube") title = "YouTube 영상";
-            else if (platform === "Instagram") title = "Instagram 게시물";
-            else title = url;
+        if (!rawTitle) {
+            if (platform === "YouTube") rawTitle = "YouTube 영상";
+            else if (platform === "Instagram") rawTitle = "Instagram 게시물";
+            else rawTitle = url;
+        }
+
+        let title = rawTitle;
+        if (getApiKey()) {
+            saveLinkBtn.textContent = "AI가 내용 파악 중...";
+            const aiTitle = await analyzeWithGemini({ url, rawTitle }, 'url');
+            if (aiTitle) title = aiTitle;
         }
 
         storedContents[currentCategory].push({
@@ -215,6 +250,46 @@ newImageInput.addEventListener('change', (e) => {
         fileNameDisplay.textContent = '클릭하여 이미지 선택';
     }
 });
+
+// AI Analyze Logic using Gemini
+async function analyzeWithGemini(content, type) {
+    const key = getApiKey();
+    if (!key) return null;
+
+    let payload;
+    if (type === 'image') {
+        const base64Data = content.split(',')[1];
+        payload = {
+            contents: [{
+                parts: [
+                    {text: "이 이미지의 핵심 내용을 파악해서 1~5단어 길이의 명확하고 깔끔한 한국어 제목을 하나만 지어줘. (예: 아침 한강 조깅, 맛집 리뷰 영수증). 아무런 추가 설명 없이 제목 텍스트만 줘."},
+                    {inline_data: {mime_type: "image/jpeg", data: base64Data}}
+                ]
+            }],
+            generationConfig: { maxOutputTokens: 50, temperature: 0.2 }
+        };
+    } else {
+        payload = {
+            contents: [{
+                parts: [{text: `다음 링크 주소와 원본 HTML 제목을 바탕으로, 이 게시물이 구체적으로 어떤 내용인지 유추해서 3~7단어 길이의 명확하고 깔끔한 한국어 제목을 하나만 지어줘 (예: "만능 된장 레시피", "자녀교육 영어 꿀팁"). Instagram/YouTube 게시물 같은 일반적인 말은 피하고 핵심 내용만. 링크: ${content.url}, 원본제목: ${content.rawTitle}. 다른 문구 부가 설명 없이 제목 하나만 딱 반환해.`}]
+            }],
+            generationConfig: { maxOutputTokens: 50, temperature: 0.3 }
+        };
+    }
+
+    try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        return json.candidates[0].content.parts[0].text.replace(/\n/g, '').replace(/"/g, '').trim();
+    } catch (e) {
+        console.error("Gemini AI failed", e);
+        return null;
+    }
+}
 
 function renderSelected() {
     selectedDisplay.innerHTML = '';
