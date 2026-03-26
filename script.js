@@ -84,7 +84,16 @@ function saveSettings() {
 }
 
 function saveContents() {
-    localStorage.setItem('findable_contents', JSON.stringify(storedContents));
+    try {
+        localStorage.setItem('findable_contents', JSON.stringify(storedContents));
+    } catch (e) {
+        console.error("Local storage error:", e);
+        // Alert user if quota exceeded
+        if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.message.includes("quota")) {
+            alert('🚨 저장 공간이 부족합니다! 너무 많은 이미지가 저장되었거나 이미지 용량이 너무 큽니다. 불필요한 게시물을 삭제해주세요.');
+            // Revert state if possible or let user manually fix it
+        }
+    }
 }
 
 function initGrid() {
@@ -328,11 +337,22 @@ function renderContentSections(query) {
     // Top 10
     const top10 = [...allItems].sort((a, b) => (b.clicks || 0) - (a.clicks || 0)).slice(0, 10);
     top10.forEach(item => {
-        const card = document.createElement('a');
-        card.href = item.url;
-        card.target = "_blank";
+        const card = document.createElement(item.platform === 'Image' ? 'div' : 'a');
+        if (item.platform !== 'Image') {
+            card.href = item.url;
+            card.target = "_blank";
+        }
         card.className = 'content-card';
-        card.addEventListener('click', () => { item.clicks = (item.clicks || 0) + 1; saveContents(); });
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', () => { 
+            item.clicks = (item.clicks || 0) + 1; 
+            saveContents(); 
+            if (item.platform === 'Image') {
+                const viewer = document.getElementById('image-viewer-overlay');
+                document.getElementById('viewer-img').src = item.url;
+                viewer.classList.add('active');
+            }
+        });
         
         const thumb = item.thumbnail || 'https://via.placeholder.com/400x225/f1f5f9/94a3b8?text=Link';
         card.innerHTML = `
@@ -374,11 +394,22 @@ function renderContentSections(query) {
 
     // All List
     allItems.forEach(item => {
-        const listItem = document.createElement('a');
-        listItem.href = item.url;
-        listItem.target = "_blank";
+        const listItem = document.createElement(item.platform === 'Image' ? 'div' : 'a');
+        if (item.platform !== 'Image') {
+            listItem.href = item.url;
+            listItem.target = "_blank";
+        }
         listItem.className = 'list-item';
-        listItem.addEventListener('click', () => { item.clicks = (item.clicks || 0) + 1; saveContents(); });
+        listItem.style.cursor = 'pointer';
+        listItem.addEventListener('click', () => { 
+            item.clicks = (item.clicks || 0) + 1; 
+            saveContents(); 
+            if (item.platform === 'Image') {
+                const viewer = document.getElementById('image-viewer-overlay');
+                document.getElementById('viewer-img').src = item.url;
+                viewer.classList.add('active');
+            }
+        });
         
         const thumb = item.thumbnail || 'https://via.placeholder.com/80x45/f1f5f9/94a3b8?text=Link';
         listItem.innerHTML = `
@@ -466,4 +497,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettings(); 
     initGrid(); 
     updateMissingTitles();
+});
+
+const imageViewerOverlay = document.getElementById('image-viewer-overlay');
+const closeViewerBtn = document.getElementById('close-viewer-btn');
+
+closeViewerBtn.addEventListener('click', () => imageViewerOverlay.classList.remove('active'));
+imageViewerOverlay.addEventListener('click', (e) => { 
+    if (e.target === imageViewerOverlay) imageViewerOverlay.classList.remove('active');
 });

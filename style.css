@@ -1040,3 +1040,49 @@ body {
 .action-btn.delete-btn:hover {
     color: #ef4444;
 }
+
+/* Image Viewer Modal */
+.image-viewer-overlay {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    z-index: 4000;
+}
+
+.image-viewer-overlay.active {
+    display: flex;
+}
+
+.image-viewer-overlay img {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    object-fit: contain;
+}
+
+.close-viewer-btn {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: white;
+    border: none;
+    font-size: 2rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.close-viewer-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    transform: scale(1.05);
+}
