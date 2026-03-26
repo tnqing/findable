@@ -300,4 +300,35 @@ function closeContentView() {
 backBtn.addEventListener('click', closeContentView);
 contentOverlay.addEventListener('click', (e) => { e.target === contentOverlay && closeContentView() });
 
-document.addEventListener('DOMContentLoaded', () => { loadSettings(); initGrid(); });
+async function updateMissingTitles() {
+    let updated = false;
+    for (const category in storedContents) {
+        for (let item of storedContents[category]) {
+            // Update title if it's missing, or if it's just the URL, or a generic placeholder
+            if (!item.title || item.title === item.url || item.title === "YouTube 영상" || item.title === "Instagram 게시물" || item.title === "새로운 링크") {
+                try {
+                    const fetchedTitle = await fetchTitle(item.url);
+                    if (fetchedTitle && fetchedTitle !== item.url && fetchedTitle !== "Instagram") {
+                        item.title = fetchedTitle;
+                        updated = true;
+                    }
+                } catch (e) {
+                    console.error("Failed to update title for", item.url);
+                }
+            }
+        }
+    }
+    
+    if (updated) {
+        saveContents();
+        if (currentCategory) {
+            renderContentSections(searchInput.value);
+        }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => { 
+    loadSettings(); 
+    initGrid(); 
+    updateMissingTitles();
+});
