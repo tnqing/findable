@@ -134,15 +134,36 @@ addLinkBtn.addEventListener('click', () => addLinkOverlay.classList.add('active'
 addLinkOverlay.addEventListener('click', (e) => { e.target === addLinkOverlay && addLinkOverlay.classList.remove('active') });
 
 async function fetchTitle(url) {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        try {
+            const ytResponse = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+            if (ytResponse.ok) {
+                const ytData = await ytResponse.json();
+                if (ytData.title) return ytData.title;
+            }
+        } catch (e) {
+            console.error("YouTube oembed fetch failed:", e);
+        }
+    }
+
     try {
-        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
+        
+        const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) return null;
+        
         const data = await response.json();
         const parser = new DOMParser();
         const doc = parser.parseFromString(data.contents, 'text/html');
         let title = doc.querySelector('title')?.innerText || '';
         return title.replace(/\n/g, '').trim();
     } catch (e) {
-        console.error("Title fetch failed:", e);
+        console.error("Title fetch failed or timed out:", e);
         return null;
     }
 }
