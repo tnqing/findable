@@ -699,7 +699,7 @@ function openItemDetail(item) {
 
     // Auto summarize if no note exists
     if (!item.note && getApiKey()) {
-        aiSummarizeBtn.click();
+        setTimeout(runAISummarization, 50); // Small delay to let UI render first
     }
 }
 
@@ -740,15 +740,20 @@ saveNoteBtn.addEventListener('click', () => {
     }
 });
 
-aiSummarizeBtn.addEventListener('click', async () => {
-    if (!currentDetailItem) return;
+async function runAISummarization() {
+    if (!currentDetailItem || !getApiKey()) return;
     
     const originalHtml = aiSummarizeBtn.innerHTML;
     aiSummarizeBtn.innerHTML = '요약 중...';
     aiSummarizeBtn.disabled = true;
-    detailNoteDisplay.textContent = "AI가 영상 제목과 링크를 분석하여 요약본을 작성 중입니다...\n(잠시만 기다려주세요⏳)";
+    detailNoteDisplay.style.display = 'block';
+    detailNoteInput.style.display = 'none';
+    detailFooter.style.display = 'none';
+    editNoteBtn.textContent = '수정하기';
     
-    let promptText = `다음 링크와 영상 제목을 보고, 이것이 레시피(요리) 영상이라고 가정하여 핵심을 정리해줘. \n만약 요리 영상이 아니라면 해당 영상의 핵심 줄거리를 구조화해서 정리해줘.\n영상 제목: ${currentDetailItem.title}\n링크: ${currentDetailItem.url}\n\n[출력 형식 예시 - 요리인 경우]\n- 🍳 요리명: [요리 이름]\n- 🛒 준비 재료: [주요 재료 목록들]\n- 👨‍🍳 요리 순서:\n  1. ...\n  2. ...\n\n[출력 형식 예시 - 일반인 경우]\n- 📝 주제: [유추되는 주제]\n- 💡 핵심 요약: [내용 정리]\n\n최대한 구체적이고 깔끔한 마크다운 형식으로 한글로 작성해.`;
+    detailNoteDisplay.textContent = "✨ AI가 영상 제목과 링크를 분석하여 자동 요약본을 작성 중입니다...\n(약 2~5초 정도 소요될 수 있습니다 ⏳)";
+    
+    let promptText = `다음 링크와 영상 제목을 보고, 이것이 레시피(요리) 영상이라고 가정하여 핵심을 정리해줘. \n만약 요리 영상이 아니라면 해당 영상의 핵심 줄거리를 구조화해서 정리해줘.\n영상 제목: ${currentDetailItem.title}\n링크: ${currentDetailItem.url}\n\n[출력 형식 예시 - 요리인 경우]\n- 🍳 요리명: [요리 이름]\n- 🛒 준비 재료: [주요 재료 목록들]\n- 👨‍🍳 요리 순서:\n  1. ...\n  2. ...\n\n[출력 형식 예시 - 일반인 경우]\n- 📝 주제: [유추되는 주제]\n- 💡 핵심 요약: [내용 정리]\n\n최대한 구체적이고 깔끔한 단답형 마크다운으로 한글로 작성해.`;
     
     const key = getApiKey();
     const payload = {
@@ -770,14 +775,17 @@ aiSummarizeBtn.addEventListener('click', async () => {
             saveContents();
             detailNoteDisplay.textContent = summary;
         } else {
-            detailNoteDisplay.textContent = "AI 요약에 실패했습니다. (내용을 파악할 수 없거나 형식이 올바르지 않음)\n다시 시도하거나 직접 메모를 작성해 주세요.";
+            console.error("Gemini AI Summarize Error:", json);
+            detailNoteDisplay.textContent = "❌ AI 요약에 실패했습니다. (Gemini가 영상 내용을 제대로 추측하지 못했거나 오류가 발생했습니다)\n우측 상단의 '수정하기'를 눌러 직접 요약을 등록해 보세요.";
         }
     } catch (e) {
-        detailNoteDisplay.textContent = "네트워크 혹은 API 통신 오류로 요약에 실패했습니다.";
         console.error(e);
+        detailNoteDisplay.textContent = "❌ 네트워크 혹은 API 통신 오류로 요약에 실패했습니다.";
     }
     
     aiSummarizeBtn.innerHTML = originalHtml;
     aiSummarizeBtn.disabled = false;
-});
+}
+
+aiSummarizeBtn.addEventListener('click', runAISummarization);
 
