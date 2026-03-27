@@ -72,6 +72,37 @@ body {
     color: var(--accent-color);
 }
 
+/* Heart filter button (header) */
+.heart-filter-btn {
+    width: 38px;
+    height: 38px;
+    background: white;
+    border: 0.8px solid var(--glass-border);
+    border-radius: 12px;
+    color: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.heart-filter-btn:hover {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
+
+/* Heart button in cards/lists */
+.action-btn.heart-btn.liked {
+    color: #ef4444;
+}
+
+.action-btn.heart-btn.liked svg {
+    fill: #ef4444;
+}
+
+.action-btn.heart-btn:hover {
+    color: var(--accent-color);
+}
+
+
 .header-bottom-content {
     display: flex;
     align-items: center;
