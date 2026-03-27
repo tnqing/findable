@@ -1041,6 +1041,18 @@ body {
     color: #ef4444;
 }
 
+.action-btn.heart-btn.liked {
+    color: #ef4444;
+}
+
+.action-btn.heart-btn.liked svg {
+    fill: #ef4444;
+}
+
+.action-btn.heart-btn:hover {
+    color: #ef4444;
+}
+
 /* Image Viewer Modal */
 .image-viewer-overlay {
     display: none;

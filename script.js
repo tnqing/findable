@@ -359,6 +359,7 @@ function renderContentSections(query) {
             <div class="card-thumbnail"><span class="platform-badge">${item.platform}</span><img src="${thumb}"></div>
             <div class="card-info"><h3 class="card-title">${item.title}</h3></div>
             <div class="card-actions">
+                <button class="action-btn heart-btn ${item.liked ? 'liked' : ''}" title="좋아요"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button>
                 <button class="action-btn edit-btn" title="제목 수정"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                 <button class="action-btn delete-btn" title="삭제"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
             </div>
@@ -366,7 +367,15 @@ function renderContentSections(query) {
         
         const editBtn = card.querySelector('.edit-btn');
         const deleteBtn = card.querySelector('.delete-btn');
+        const heartBtn = card.querySelector('.heart-btn');
         
+        heartBtn.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            item.liked = !item.liked;
+            saveContents();
+            renderContentSections(searchInput.value);
+        });
+
         editBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             const newTitle = prompt("새로운 제목을 입력하세요:", item.title);
@@ -419,6 +428,7 @@ function renderContentSections(query) {
                 <div class="list-meta">${item.platform} • ${item.url.substring(0, 40)}...</div>
             </div>
             <div class="list-actions">
+                <button class="action-btn heart-btn ${item.liked ? 'liked' : ''}" title="좋아요"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button>
                 <button class="action-btn edit-btn" title="제목 수정"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                 <button class="action-btn delete-btn" title="삭제"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
             </div>
@@ -426,7 +436,15 @@ function renderContentSections(query) {
         
         const listEditBtn = listItem.querySelector('.edit-btn');
         const listDeleteBtn = listItem.querySelector('.delete-btn');
+        const listHeartBtn = listItem.querySelector('.heart-btn');
         
+        listHeartBtn.addEventListener('click', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            item.liked = !item.liked;
+            saveContents();
+            renderContentSections(searchInput.value);
+        });
+
         listEditBtn.addEventListener('click', (e) => {
             e.preventDefault(); e.stopPropagation();
             const newTitle = prompt("새로운 제목을 입력하세요:", item.title);
