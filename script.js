@@ -46,6 +46,7 @@ const addLinkBtn = document.getElementById('add-link-btn');
 const saveLinkBtn = document.getElementById('save-link-btn');
 const newLinkInput = document.getElementById('new-link-url');
 const newImageInput = document.getElementById('new-image-upload');
+const newLinkTitleInput = document.getElementById('new-link-title');
 const fileNameDisplay = document.getElementById('file-name-display');
 
 const aiSettingsBtn = document.getElementById('ai-settings-btn');
@@ -157,9 +158,10 @@ saveLinkBtn.addEventListener('click', async () => {
     if (file) {
         try {
             const base64Image = await resizeImage(file, 800);
-            let title = file.name.split('.')[0] || "화면 캡처 이미지";
+            const userTitle = newLinkTitleInput.value.trim();
+            let title = userTitle || file.name.split('.')[0] || "화면 캡처 이미지";
             
-            if (getApiKey()) {
+            if (!userTitle && getApiKey()) {
                 saveLinkBtn.textContent = "AI가 사진 분석 중...";
                 const aiTitle = await analyzeWithGemini(base64Image, 'image');
                 if (aiTitle) title = aiTitle;
@@ -196,8 +198,10 @@ saveLinkBtn.addEventListener('click', async () => {
             else rawTitle = url;
         }
 
-        let title = rawTitle;
-        if (getApiKey()) {
+        const userTitle = newLinkTitleInput.value.trim();
+        let title = userTitle || rawTitle;
+
+        if (!userTitle && getApiKey()) {
             saveLinkBtn.textContent = "AI가 내용 파악 중...";
             const aiTitle = await analyzeWithGemini({ url, rawTitle }, 'url');
             if (aiTitle) title = aiTitle;
@@ -218,6 +222,7 @@ saveLinkBtn.addEventListener('click', async () => {
     
     newLinkInput.value = "";
     newImageInput.value = "";
+    newLinkTitleInput.value = "";
     fileNameDisplay.textContent = "클릭하여 이미지 선택";
     saveLinkBtn.textContent = originalText;
     saveLinkBtn.disabled = false;
