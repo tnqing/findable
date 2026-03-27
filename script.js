@@ -271,26 +271,26 @@ async function analyzeWithGemini(content, type) {
     const key = getApiKey();
     if (!key) return null;
 
-    let payload;
+    let promptText = "";
+    let inlineData = null;
+
     if (type === 'image') {
-        const base64Data = content.split(',')[1];
-        payload = {
-            contents: [{
-                parts: [
-                    {text: "이 이미지의 핵심 내용을 파악해서 1~5단어 길이의 명확하고 깔끔한 한국어 제목을 하나만 지어줘. (예: 아침 한강 조깅, 맛집 리뷰 영수증). 아무런 추가 설명 없이 제목 텍스트만 줘."},
-                    {inline_data: {mime_type: "image/jpeg", data: base64Data}}
-                ]
-            }],
-            generationConfig: { maxOutputTokens: 50, temperature: 0.2 }
-        };
+        promptText = "이 이미지를 한 문장으로 요약해서 핵심 내용을 나타내는 2~5단어 사이의 한국어 제목을 지어줘. (예: 한강 공원 피크닉, 맛집 영수증 리뷰). 아무런 부가 설명이나 인사 없이 제목만 딱 하나 반환해.";
+        inlineData = { mime_type: "image/jpeg", data: content.split(',')[1] };
     } else {
-        payload = {
-            contents: [{
-                parts: [{text: `다음 링크 주소와 원본 HTML 제목을 바탕으로, 이 게시물이 구체적으로 어떤 내용인지 유추해서 3~7단어 길이의 명확하고 깔끔한 한국어 제목을 하나만 지어줘 (예: "만능 된장 레시피", "자녀교육 영어 꿀팁"). Instagram/YouTube 게시물 같은 일반적인 말은 피하고 핵심 내용만. 링크: ${content.url}, 원본제목: ${content.rawTitle}. 다른 문구 부가 설명 없이 제목 하나만 딱 반환해.`}]
-            }],
-            generationConfig: { maxOutputTokens: 50, temperature: 0.3 }
-        };
+        const cleanRawTitle = (content.rawTitle || "").substring(0, 100);
+        promptText = `다음 링크와 제목을 보고 이 글의 핵심 내용을 유추해서 3~6단어 사이의 명확한 한국어 제목을 하나만 지어줘. 링크: ${content.url}, 원본제목: ${cleanRawTitle}. 일반적인 'YouTube 영상'이나 '인스타그램' 같은 말은 빼고 구체적인 핵심만! 다른 문구 없이 제목만 반환해.`;
     }
+
+    const payload = {
+        contents: [{
+            parts: [
+                { text: promptText },
+                ...(inlineData ? [{ inline_data: inlineData }] : [])
+            ]
+        }],
+        generationConfig: { maxOutputTokens: 50, temperature: 0.2 }
+    };
 
     try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
@@ -298,10 +298,25 @@ async function analyzeWithGemini(content, type) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
+        
         const json = await res.json();
-        return json.candidates[0].content.parts[0].text.replace(/\n/g, '').replace(/"/g, '').trim();
+
+        if (json.error) {
+            console.error("Gemini API Error Detail:", json.error.message);
+            if (json.error.message.includes("API key not valid")) {
+                alert("AI 설정: 입력하신 API 키가 올바르지 않은 것 같습니다. 다시 확인해 주세요!");
+            }
+            return null;
+        }
+
+        if (json.candidates && json.candidates[0]?.content?.parts?.[0]?.text) {
+            return json.candidates[0].content.parts[0].text.replace(/\n/g, '').replace(/"/g, '').trim();
+        } else {
+            console.warn("Gemini response is empty or invalid format", json);
+            return null;
+        }
     } catch (e) {
-        console.error("Gemini AI failed", e);
+        console.error("Gemini AI fetch fail:", e);
         return null;
     }
 }
