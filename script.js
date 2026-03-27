@@ -78,6 +78,10 @@ function loadSettings() {
         selectedItems = new Set(JSON.parse(saved));
         renderSelected();
     }
+    const activeCat = localStorage.getItem('active_category');
+    if (activeCat && selectedItems.has(activeCat)) {
+        openContentView(activeCat);
+    }
 }
 
 function saveSettings() {
@@ -335,6 +339,7 @@ function renderSelected() {
 
 function openContentView(category) {
     currentCategory = category;
+    localStorage.setItem('active_category', category);
     modalCategoryName.textContent = category;
     backBtn.classList.add('active');
     guidanceMsg.classList.add('hidden');
@@ -503,6 +508,7 @@ function closeContentView() {
     guidanceMsg.classList.remove('hidden');
     searchInput.value = "";
     addLinkOverlay.classList.remove('active');
+    localStorage.removeItem('active_category');
 }
 
 backBtn.addEventListener('click', closeContentView);
