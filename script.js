@@ -614,6 +614,8 @@ const editNoteBtn = document.getElementById('edit-note-btn');
 const detailFooter = document.getElementById('detail-footer');
 const saveNoteBtn = document.getElementById('save-note-btn');
 
+const aiSummarizeBtn = document.getElementById('ai-summarize-btn');
+
 let currentDetailItem = null;
 
 function openItemDetail(item) {
@@ -654,6 +656,11 @@ function openItemDetail(item) {
     editNoteBtn.textContent = '수정하기';
     editNoteBtn.style.display = 'block';
     detailFooter.style.display = 'none';
+    
+    // AI Summarize style rules
+    aiSummarizeBtn.style.display = getApiKey() ? 'flex' : 'none';
+    aiSummarizeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>AI 자동 요약';
+    aiSummarizeBtn.disabled = false;
     
     itemDetailOverlay.classList.add('active');
 }
@@ -696,3 +703,45 @@ saveNoteBtn.addEventListener('click', () => {
         editNoteBtn.textContent = '수정하기';
     }
 });
+
+aiSummarizeBtn.addEventListener('click', async () => {
+    if (!currentDetailItem) return;
+    
+    const originalHtml = aiSummarizeBtn.innerHTML;
+    aiSummarizeBtn.innerHTML = '요약 중...';
+    aiSummarizeBtn.disabled = true;
+    detailNoteDisplay.textContent = "AI가 영상 제목과 링크를 분석하여 요약본을 작성 중입니다...\n(잠시만 기다려주세요⏳)";
+    
+    let promptText = `다음 링크와 영상 제목을 보고, 이것이 레시피(요리) 영상이라고 가정하여 핵심을 정리해줘. \n만약 요리 영상이 아니라면 해당 영상의 핵심 줄거리를 구조화해서 정리해줘.\n영상 제목: ${currentDetailItem.title}\n링크: ${currentDetailItem.url}\n\n[출력 형식 예시 - 요리인 경우]\n- 🍳 요리명: [요리 이름]\n- 🛒 준비 재료: [주요 재료 목록들]\n- 👨‍🍳 요리 순서:\n  1. ...\n  2. ...\n\n[출력 형식 예시 - 일반인 경우]\n- 📝 주제: [유추되는 주제]\n- 💡 핵심 요약: [내용 정리]\n\n최대한 구체적이고 깔끔한 마크다운 형식으로 한글로 작성해.`;
+    
+    const key = getApiKey();
+    const payload = {
+        contents: [{ parts: [{ text: promptText }] }],
+        generationConfig: { maxOutputTokens: 500, temperature: 0.3 }
+    };
+    
+    try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        
+        if (json.candidates && json.candidates[0]?.content?.parts?.[0]?.text) {
+            const summary = json.candidates[0].content.parts[0].text.trim();
+            currentDetailItem.note = summary;
+            saveContents();
+            detailNoteDisplay.textContent = summary;
+        } else {
+            detailNoteDisplay.textContent = "AI 요약에 실패했습니다. (내용을 파악할 수 없거나 형식이 올바르지 않음)\n다시 시도하거나 직접 메모를 작성해 주세요.";
+        }
+    } catch (e) {
+        detailNoteDisplay.textContent = "네트워크 혹은 API 통신 오류로 요약에 실패했습니다.";
+        console.error(e);
+    }
+    
+    aiSummarizeBtn.innerHTML = originalHtml;
+    aiSummarizeBtn.disabled = false;
+});
+
