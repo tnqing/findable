@@ -776,11 +776,15 @@ async function runAISummarization() {
             detailNoteDisplay.textContent = summary;
         } else {
             console.error("Gemini AI Summarize Error:", json);
-            detailNoteDisplay.textContent = "❌ AI 요약에 실패했습니다. (Gemini가 영상 내용을 제대로 추측하지 못했거나 오류가 발생했습니다)\n우측 상단의 '수정하기'를 눌러 직접 요약을 등록해 보세요.";
+            let reason = "이유를 알 수 없는 오류입니다.";
+            if (json.error) reason = `API 오류: ${json.error.message}`;
+            else if (json.candidates && json.candidates[0]?.finishReason) reason = `차단됨 (사유: ${json.candidates[0].finishReason})`;
+            
+            detailNoteDisplay.textContent = `❌ AI 요약에 실패했습니다.\n\n상세 사유: ${reason}\n\n우측 상단의 '수정하기'를 눌러 직접 요약을 등록해 보세요.`;
         }
     } catch (e) {
         console.error(e);
-        detailNoteDisplay.textContent = "❌ 네트워크 혹은 API 통신 오류로 요약에 실패했습니다.";
+        detailNoteDisplay.textContent = `❌ 네트워크 혹은 API 통신 오류로 요약에 실패했습니다.\n(${e.message})`;
     }
     
     aiSummarizeBtn.innerHTML = originalHtml;
