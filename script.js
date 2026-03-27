@@ -61,8 +61,9 @@ function getApiKey() {
 aiSettingsBtn.addEventListener('click', () => {
     aiApiKeyInput.value = getApiKey();
     aiSettingsOverlay.classList.add('active');
+    history.pushState({modal:'ai'}, '', '');
 });
-aiSettingsOverlay.addEventListener('click', (e) => { e.target === aiSettingsOverlay && aiSettingsOverlay.classList.remove('active') });
+aiSettingsOverlay.addEventListener('click', (e) => { e.target === aiSettingsOverlay && history.back() });
 saveAiKeyBtn.addEventListener('click', () => {
     localStorage.setItem('findable_gemini_key', aiApiKeyInput.value.trim());
     aiSettingsOverlay.classList.remove('active');
@@ -125,13 +126,13 @@ function toggleCategory(element, name) {
 }
 
 // Event Listeners
-openBtn.addEventListener('click', () => { initGrid(); categoryOverlay.classList.add('active'); });
-categoryOverlay.addEventListener('click', (e) => { e.target === categoryOverlay && categoryOverlay.classList.remove('active') });
+openBtn.addEventListener('click', () => { initGrid(); categoryOverlay.classList.add('active'); history.pushState({modal:'category'}, '', ''); });
+categoryOverlay.addEventListener('click', (e) => { e.target === categoryOverlay && history.back() });
 submitBtn.addEventListener('click', () => { saveSettings(); categoryOverlay.classList.remove('active'); renderSelected(); });
 
 // Add Link Logic
-addLinkBtn.addEventListener('click', () => addLinkOverlay.classList.add('active'));
-addLinkOverlay.addEventListener('click', (e) => { e.target === addLinkOverlay && addLinkOverlay.classList.remove('active') });
+addLinkBtn.addEventListener('click', () => { addLinkOverlay.classList.add('active'); history.pushState({modal:'add'}, '', ''); });
+addLinkOverlay.addEventListener('click', (e) => { e.target === addLinkOverlay && history.back() });
 
 async function fetchTitle(url) {
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
@@ -378,6 +379,7 @@ function openContentView(category) {
     guidanceMsg.classList.add('hidden');
     renderContentSections("");
     contentOverlay.classList.add('active');
+    history.pushState({modal:'content'}, '', '');
 }
 
 function renderContentSections(query) {
@@ -414,6 +416,7 @@ function renderContentSections(query) {
                 const viewer = document.getElementById('image-viewer-overlay');
                 document.getElementById('viewer-img').src = item.url;
                 viewer.classList.add('active');
+                history.pushState({modal:'image'}, '', '');
             } else {
                 openItemDetail(item);
             }
@@ -483,6 +486,7 @@ function renderContentSections(query) {
                 const viewer = document.getElementById('image-viewer-overlay');
                 document.getElementById('viewer-img').src = item.url;
                 viewer.classList.add('active');
+                history.pushState({modal:'image'}, '', '');
             } else {
                 openItemDetail(item);
             }
@@ -542,17 +546,20 @@ function renderContentSections(query) {
 
 searchInput.addEventListener('input', (e) => renderContentSections(e.target.value));
 
-function closeContentView() {
+function closeContentView(fromPopState = false) {
     contentOverlay.classList.remove('active');
     backBtn.classList.remove('active');
     guidanceMsg.classList.remove('hidden');
     searchInput.value = "";
     addLinkOverlay.classList.remove('active');
     localStorage.removeItem('active_category');
+    if (fromPopState !== true) {
+        // history.back() might be called if user clicked UI back button
+    }
 }
 
-backBtn.addEventListener('click', closeContentView);
-contentOverlay.addEventListener('click', (e) => { e.target === contentOverlay && closeContentView() });
+backBtn.addEventListener('click', () => history.back());
+contentOverlay.addEventListener('click', (e) => { e.target === contentOverlay && history.back() });
 
 async function updateMissingTitles() {
     let updated = false;
@@ -581,6 +588,31 @@ async function updateMissingTitles() {
     }
 }
 
+// History Management for Modals
+function pushModalState(modalId) {
+    history.pushState({ modal: modalId }, '', '');
+}
+
+window.addEventListener('popstate', (e) => {
+    // Whenever back button is pressed, we close the top-most active modal
+    if (document.getElementById('item-detail-overlay').classList.contains('active')) {
+        document.getElementById('item-detail-overlay').classList.remove('active');
+        document.getElementById('detail-media-container').innerHTML = '';
+    } else if (imageViewerOverlay.classList.contains('active')) {
+        imageViewerOverlay.classList.remove('active');
+    } else if (addLinkOverlay.classList.contains('active')) {
+        addLinkOverlay.classList.remove('active');
+    } else if (document.getElementById('ai-settings-overlay').classList.contains('active')) {
+        document.getElementById('ai-settings-overlay').classList.remove('active');
+    } else if (categoryOverlay.classList.contains('active')) {
+        categoryOverlay.classList.remove('active');
+    } else if (contentOverlay.classList.contains('active')) {
+        closeContentView(true); // pass true to indicate it's from popstate
+    }
+});
+
+// History Management logic continues past this point
+
 document.addEventListener('DOMContentLoaded', () => { 
     loadSettings(); 
     initGrid(); 
@@ -598,9 +630,9 @@ document.addEventListener('DOMContentLoaded', () => {
 const imageViewerOverlay = document.getElementById('image-viewer-overlay');
 const closeViewerBtn = document.getElementById('close-viewer-btn');
 
-closeViewerBtn.addEventListener('click', () => imageViewerOverlay.classList.remove('active'));
+closeViewerBtn.addEventListener('click', () => { history.back(); });
 imageViewerOverlay.addEventListener('click', (e) => { 
-    if (e.target === imageViewerOverlay) imageViewerOverlay.classList.remove('active');
+    if (e.target === imageViewerOverlay) history.back();
 });
 
 // Item Detail Logic
@@ -663,6 +695,7 @@ function openItemDetail(item) {
     aiSummarizeBtn.disabled = false;
     
     itemDetailOverlay.classList.add('active');
+    history.pushState({modal:'detail'}, '', '');
 
     // Auto summarize if no note exists
     if (!item.note && getApiKey()) {
@@ -671,13 +704,11 @@ function openItemDetail(item) {
 }
 
 closeDetailBtn.addEventListener('click', () => {
-    itemDetailOverlay.classList.remove('active');
-    detailMediaContainer.innerHTML = ''; // Stop video playback
+    history.back();
 });
 itemDetailOverlay.addEventListener('click', (e) => { 
     if (e.target === itemDetailOverlay) {
-        itemDetailOverlay.classList.remove('active');
-        detailMediaContainer.innerHTML = '';
+        history.back();
     }
 });
 
