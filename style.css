@@ -220,12 +220,14 @@ body {
 
 .search-wrapper input {
     width: 100%;
-    padding: 0.8rem 1rem 0.8rem 2.8rem;
+    height: 38px;
+    padding: 0 1rem 0 2.8rem;
     border-radius: 12px;
-    border: 1px solid rgba(0,0,0,0.05);
+    border: 0.8px solid var(--glass-border);
     background: white;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .search-wrapper input:focus {
