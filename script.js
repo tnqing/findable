@@ -136,7 +136,7 @@ addLinkOverlay.addEventListener('click', (e) => { e.target === addLinkOverlay &&
 async function fetchTitle(url) {
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
         try {
-            const ytResponse = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+            const ytResponse = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
             if (ytResponse.ok) {
                 const ytData = await ytResponse.json();
                 if (ytData.title) return ytData.title;
