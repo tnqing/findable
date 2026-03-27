@@ -504,6 +504,7 @@ function renderContentSections(query) {
         `;
         
         const listEditBtn = listItem.querySelector('.edit-btn');
+        const listDeleteBtn = listItem.querySelector('.delete-btn');
         const listHeartBtn = listItem.querySelector('.heart-btn');
         
         listHeartBtn.addEventListener('click', (e) => {
