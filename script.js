@@ -135,14 +135,26 @@ addLinkOverlay.addEventListener('click', (e) => { e.target === addLinkOverlay &&
 
 async function fetchTitle(url) {
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        try {
-            const ytResponse = await fetch(`https://noembed.com/embed?url=${encodeURIComponent(url)}`);
-            if (ytResponse.ok) {
-                const ytData = await ytResponse.json();
-                if (ytData.title) return ytData.title;
+        let videoId = "";
+        if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1]?.split('?')[0];
+        } else if (url.includes('youtube.com/shorts/')) {
+            videoId = url.split('youtube.com/shorts/')[1]?.split('?')[0];
+        } else if (url.includes('v=')) {
+            videoId = url.split('v=')[1]?.split('&')[0];
+        }
+        
+        if (videoId) {
+            try {
+                const oembedUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+                const ytResponse = await fetch(oembedUrl);
+                if (ytResponse.ok) {
+                    const ytData = await ytResponse.json();
+                    if (ytData.title) return ytData.title;
+                }
+            } catch (e) {
+                console.error("YouTube oembed fetch failed:", e);
             }
-        } catch (e) {
-            console.error("YouTube oembed fetch failed:", e);
         }
     }
 
@@ -390,17 +402,20 @@ function renderContentSections(query) {
         const card = document.createElement(item.platform === 'Image' ? 'div' : 'a');
         if (item.platform !== 'Image') {
             card.href = item.url;
-            card.target = "_blank";
+            card.addEventListener('click', (e) => e.preventDefault()); // Prevent default navigation
         }
         card.className = 'content-card';
         card.style.cursor = 'pointer';
-        card.addEventListener('click', () => { 
+        card.addEventListener('click', (e) => { 
+            if(e.target.closest('.card-actions')) return; // Ignore clicks on action buttons
             item.clicks = (item.clicks || 0) + 1; 
             saveContents(); 
             if (item.platform === 'Image') {
                 const viewer = document.getElementById('image-viewer-overlay');
                 document.getElementById('viewer-img').src = item.url;
                 viewer.classList.add('active');
+            } else {
+                openItemDetail(item);
             }
         });
         
@@ -456,17 +471,20 @@ function renderContentSections(query) {
         const listItem = document.createElement(item.platform === 'Image' ? 'div' : 'a');
         if (item.platform !== 'Image') {
             listItem.href = item.url;
-            listItem.target = "_blank";
+            listItem.addEventListener('click', (e) => e.preventDefault());
         }
         listItem.className = 'list-item';
         listItem.style.cursor = 'pointer';
-        listItem.addEventListener('click', () => { 
+        listItem.addEventListener('click', (e) => { 
+            if(e.target.closest('.list-actions')) return;
             item.clicks = (item.clicks || 0) + 1; 
             saveContents(); 
             if (item.platform === 'Image') {
                 const viewer = document.getElementById('image-viewer-overlay');
                 document.getElementById('viewer-img').src = item.url;
                 viewer.classList.add('active');
+            } else {
+                openItemDetail(item);
             }
         });
         
@@ -481,11 +499,11 @@ function renderContentSections(query) {
                 <button class="action-btn heart-btn ${item.liked ? 'liked' : ''}" title="좋아요"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg></button>
                 <button class="action-btn edit-btn" title="제목 수정"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pencil"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
                 <button class="action-btn delete-btn" title="삭제"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+                <button class="action-btn" title="바로 방문하기" onclick="window.open('${item.url}', '_blank');"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg></button>
             </div>
         `;
         
         const listEditBtn = listItem.querySelector('.edit-btn');
-        const listDeleteBtn = listItem.querySelector('.delete-btn');
         const listHeartBtn = listItem.querySelector('.heart-btn');
         
         listHeartBtn.addEventListener('click', (e) => {
@@ -582,4 +600,98 @@ const closeViewerBtn = document.getElementById('close-viewer-btn');
 closeViewerBtn.addEventListener('click', () => imageViewerOverlay.classList.remove('active'));
 imageViewerOverlay.addEventListener('click', (e) => { 
     if (e.target === imageViewerOverlay) imageViewerOverlay.classList.remove('active');
+});
+
+// Item Detail Logic
+const itemDetailOverlay = document.getElementById('item-detail-overlay');
+const closeDetailBtn = document.getElementById('close-detail-btn');
+const detailTitle = document.getElementById('detail-title');
+const detailMediaContainer = document.getElementById('detail-media-container');
+const detailNoteDisplay = document.getElementById('detail-note-display');
+const detailNoteInput = document.getElementById('detail-note-input');
+const editNoteBtn = document.getElementById('edit-note-btn');
+const detailFooter = document.getElementById('detail-footer');
+const saveNoteBtn = document.getElementById('save-note-btn');
+
+let currentDetailItem = null;
+
+function openItemDetail(item) {
+    currentDetailItem = item;
+    detailTitle.textContent = item.title;
+    
+    // Media Logic
+    detailMediaContainer.innerHTML = '';
+    detailMediaContainer.style.display = 'none';
+    
+    if (item.platform === 'YouTube') {
+        let videoId = "";
+        if (item.url.includes('youtu.be/')) videoId = item.url.split('youtu.be/')[1]?.split('?')[0];
+        else if (item.url.includes('youtube.com/shorts/')) videoId = item.url.split('youtube.com/shorts/')[1]?.split('?')[0];
+        else if (item.url.includes('v=')) videoId = item.url.split('v=')[1]?.split('&')[0];
+        
+        if (videoId) {
+            detailMediaContainer.style.display = 'block';
+            detailMediaContainer.innerHTML = `<iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}?autoplay=0" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:none; border-radius: 16px;"></iframe>`;
+        }
+    } else {
+        // Just show link if not youtube
+        detailMediaContainer.style.display = 'block';
+        detailMediaContainer.style.padding = '2rem';
+        detailMediaContainer.style.textAlign = 'center';
+        detailMediaContainer.style.background = 'var(--bg-card)';
+        detailMediaContainer.innerHTML = `<a href="${item.url}" target="_blank" style="color: var(--accent-color); font-weight: 600; font-size: 1.1rem;">🔗 이 웹사이트 바로가기</a>`;
+    }
+    
+    // Note Logic
+    if (item.note) {
+        detailNoteDisplay.textContent = item.note;
+    } else {
+        detailNoteDisplay.textContent = "메모가 없습니다. '수정하기'를 눌러 메모를 남겨보세요.";
+    }
+    detailNoteDisplay.style.display = 'block';
+    detailNoteInput.style.display = 'none';
+    editNoteBtn.textContent = '수정하기';
+    editNoteBtn.style.display = 'block';
+    detailFooter.style.display = 'none';
+    
+    itemDetailOverlay.classList.add('active');
+}
+
+closeDetailBtn.addEventListener('click', () => {
+    itemDetailOverlay.classList.remove('active');
+    detailMediaContainer.innerHTML = ''; // Stop video playback
+});
+itemDetailOverlay.addEventListener('click', (e) => { 
+    if (e.target === itemDetailOverlay) {
+        itemDetailOverlay.classList.remove('active');
+        detailMediaContainer.innerHTML = '';
+    }
+});
+
+editNoteBtn.addEventListener('click', () => {
+    if (detailNoteInput.style.display === 'none') {
+        detailNoteInput.value = currentDetailItem.note || '';
+        detailNoteDisplay.style.display = 'none';
+        detailNoteInput.style.display = 'block';
+        detailFooter.style.display = 'flex';
+        editNoteBtn.textContent = '취소';
+        detailNoteInput.focus();
+    } else {
+        detailNoteDisplay.style.display = 'block';
+        detailNoteInput.style.display = 'none';
+        detailFooter.style.display = 'none';
+        editNoteBtn.textContent = '수정하기';
+    }
+});
+
+saveNoteBtn.addEventListener('click', () => {
+    if (currentDetailItem) {
+        currentDetailItem.note = detailNoteInput.value.trim();
+        saveContents();
+        detailNoteDisplay.textContent = currentDetailItem.note || "메모가 없습니다. '수정하기'를 눌러 메모를 남겨보세요.";
+        detailNoteDisplay.style.display = 'block';
+        detailNoteInput.style.display = 'none';
+        detailFooter.style.display = 'none';
+        editNoteBtn.textContent = '수정하기';
+    }
 });
