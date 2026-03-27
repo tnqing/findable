@@ -208,7 +208,8 @@ saveLinkBtn.addEventListener('click', async () => {
             url: url,
             platform: platform,
             thumbnail: thumb,
-            clicks: 0
+            clicks: 0,
+            liked: false
         });
     }
 
@@ -325,9 +326,12 @@ function renderContentSections(query) {
     topLinksGrid.innerHTML = '';
     allLinksList.innerHTML = '';
 
-    const allItems = (storedContents[currentCategory] || []).filter(item => 
+    let allItems = (storedContents[currentCategory] || []).filter(item => 
         item.title.toLowerCase().includes(query.toLowerCase())
     );
+    if (window.showLikedOnly) {
+        allItems = allItems.filter(item => item.liked);
+    }
 
     if (allItems.length === 0) {
         allLinksList.innerHTML = `<div class="empty-state"><p>저장된 링크가 없습니다.</p></div>`;
@@ -515,6 +519,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettings(); 
     initGrid(); 
     updateMissingTitles();
+    // Heart filter button
+    const filterBtn = document.getElementById('filter-liked-btn');
+    window.showLikedOnly = false;
+    filterBtn.addEventListener('click', () => {
+        window.showLikedOnly = !window.showLikedOnly;
+        filterBtn.classList.toggle('active');
+        renderContentSections(searchInput.value);
+    });
 });
 
 const imageViewerOverlay = document.getElementById('image-viewer-overlay');
