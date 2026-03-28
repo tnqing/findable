@@ -49,26 +49,7 @@ const newImageInput = document.getElementById('new-image-upload');
 const newLinkTitleInput = document.getElementById('new-link-title');
 const fileNameDisplay = document.getElementById('file-name-display');
 
-const aiSettingsBtn = document.getElementById('ai-settings-btn');
-const aiSettingsOverlay = document.getElementById('ai-settings-overlay');
-const saveAiKeyBtn = document.getElementById('save-ai-key-btn');
-const aiApiKeyInput = document.getElementById('ai-api-key');
 
-function getApiKey() {
-    return localStorage.getItem('findable_gemini_key') || "";
-}
-
-aiSettingsBtn.addEventListener('click', () => {
-    aiApiKeyInput.value = getApiKey();
-    aiSettingsOverlay.classList.add('active');
-    history.pushState({modal:'ai'}, '', '');
-});
-aiSettingsOverlay.addEventListener('click', (e) => { e.target === aiSettingsOverlay && history.back() });
-saveAiKeyBtn.addEventListener('click', () => {
-    localStorage.setItem('findable_gemini_key', aiApiKeyInput.value.trim());
-    aiSettingsOverlay.classList.remove('active');
-    alert("AI 키가 저장되었습니다! 이제 제목이 똑똑하게 달립니다 ✨");
-});
 
 let selectedItems = new Set();
 let currentCategory = "";
@@ -199,7 +180,7 @@ saveLinkBtn.addEventListener('click', async () => {
             const userTitle = newLinkTitleInput.value.trim();
             let title = userTitle || file.name.split('.')[0] || "화면 캡처 이미지";
             
-            if (!userTitle && getApiKey()) {
+            if (!userTitle) {
                 saveLinkBtn.textContent = "AI가 사진 분석 중...";
                 const aiTitle = await analyzeWithGemini(base64Image, 'image');
                 if (aiTitle) title = aiTitle;
@@ -239,7 +220,7 @@ saveLinkBtn.addEventListener('click', async () => {
         const userTitle = newLinkTitleInput.value.trim();
         let title = userTitle || rawTitle;
 
-        if (!userTitle && getApiKey()) {
+        if (!userTitle) {
             saveLinkBtn.textContent = "AI가 내용 파악 중...";
             const aiTitle = await analyzeWithGemini({ url, rawTitle }, 'url');
             if (aiTitle) title = aiTitle;
@@ -304,57 +285,28 @@ newImageInput.addEventListener('change', (e) => {
     }
 });
 
-// AI Analyze Logic using Gemini
+// AI Analyze Logic using the new Backend API
 async function analyzeWithGemini(content, type) {
-    const key = getApiKey();
-    if (!key) return null;
-
-    let promptText = "";
-    let inlineData = null;
-
-    if (type === 'image') {
-        promptText = "이 이미지를 한 문장으로 요약해서 핵심 내용을 나타내는 2~5단어 사이의 한국어 제목을 지어줘. (예: 한강 공원 피크닉, 맛집 영수증 리뷰). 아무런 부가 설명이나 인사 없이 제목만 딱 하나 반환해.";
-        inlineData = { mime_type: "image/jpeg", data: content.split(',')[1] };
-    } else {
-        const cleanRawTitle = (content.rawTitle || "").substring(0, 100);
-        promptText = `다음 링크와 제목을 보고 이 글의 핵심 내용을 유추해서 3~6단어 사이의 명확한 한국어 제목을 하나만 지어줘. 링크: ${content.url}, 원본제목: ${cleanRawTitle}. 일반적인 'YouTube 영상'이나 '인스타그램' 같은 말은 빼고 구체적인 핵심만! 다른 문구 없이 제목만 반환해.`;
-    }
-
-    const payload = {
-        contents: [{
-            parts: [
-                { text: promptText },
-                ...(inlineData ? [{ inline_data: inlineData }] : [])
-            ]
-        }],
-        generationConfig: { maxOutputTokens: 50, temperature: 0.2 }
-    };
+    let action = type === 'image' ? 'title-image' : 'title-url';
+    let payload = type === 'image' ? { content } : content;
 
     try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+        const res = await fetch('/api/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ action, payload })
         });
         
         const json = await res.json();
 
-        if (json.error) {
-            console.error("Gemini API Error Detail:", json.error.message);
-            if (json.error.message.includes("API key not valid")) {
-                alert("AI 설정: 입력하신 API 키가 올바르지 않은 것 같습니다. 다시 확인해 주세요!");
-            }
+        if (json.error || !res.ok) {
+            console.error("Backend AI Error Detail:", json.error);
             return null;
         }
 
-        if (json.candidates && json.candidates[0]?.content?.parts?.[0]?.text) {
-            return json.candidates[0].content.parts[0].text.replace(/\n/g, '').replace(/"/g, '').trim();
-        } else {
-            console.warn("Gemini response is empty or invalid format", json);
-            return null;
-        }
+        return json.result;
     } catch (e) {
-        console.error("Gemini AI fetch fail:", e);
+        console.error("Backend AI fetch fail:", e);
         return null;
     }
 }
@@ -602,8 +554,6 @@ window.addEventListener('popstate', (e) => {
         imageViewerOverlay.classList.remove('active');
     } else if (addLinkOverlay.classList.contains('active')) {
         addLinkOverlay.classList.remove('active');
-    } else if (document.getElementById('ai-settings-overlay').classList.contains('active')) {
-        document.getElementById('ai-settings-overlay').classList.remove('active');
     } else if (categoryOverlay.classList.contains('active')) {
         categoryOverlay.classList.remove('active');
     } else if (contentOverlay.classList.contains('active')) {
@@ -690,7 +640,7 @@ function openItemDetail(item) {
     detailFooter.style.display = 'none';
     
     // AI Summarize style rules
-    aiSummarizeBtn.style.display = getApiKey() ? 'flex' : 'none';
+    aiSummarizeBtn.style.display = 'flex';
     aiSummarizeBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-sparkles"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>AI로 다시 요약하기';
     aiSummarizeBtn.disabled = false;
     
@@ -698,7 +648,7 @@ function openItemDetail(item) {
     history.pushState({modal:'detail'}, '', '');
 
     // Auto summarize if no note exists
-    if (!item.note && getApiKey()) {
+    if (!item.note) {
         setTimeout(runAISummarization, 50); // Small delay to let UI render first
     }
 }
@@ -741,7 +691,7 @@ saveNoteBtn.addEventListener('click', () => {
 });
 
 async function runAISummarization() {
-    if (!currentDetailItem || !getApiKey()) return;
+    if (!currentDetailItem) return;
     
     const originalHtml = aiSummarizeBtn.innerHTML;
     aiSummarizeBtn.innerHTML = '요약 중...';
@@ -753,33 +703,28 @@ async function runAISummarization() {
     
     detailNoteDisplay.textContent = "✨ AI가 영상 제목과 링크를 분석하여 자동 요약본을 작성 중입니다...\n(약 2~5초 정도 소요될 수 있습니다 ⏳)";
     
-    let promptText = `다음 링크와 영상 제목을 보고, 이것이 레시피(요리) 영상이라고 가정하여 핵심을 정리해줘. \n만약 요리 영상이 아니라면 해당 영상의 핵심 줄거리를 구조화해서 정리해줘.\n영상 제목: ${currentDetailItem.title}\n링크: ${currentDetailItem.url}\n\n[출력 형식 예시 - 요리인 경우]\n- 🍳 요리명: [요리 이름]\n- 🛒 준비 재료: [주요 재료 목록들]\n- 👨‍🍳 요리 순서:\n  1. ...\n  2. ...\n\n[출력 형식 예시 - 일반인 경우]\n- 📝 주제: [유추되는 주제]\n- 💡 핵심 요약: [내용 정리]\n\n최대한 구체적이고 깔끔한 단답형 마크다운으로 한글로 작성해.`;
-    
-    const key = getApiKey();
-    const payload = {
-        contents: [{ parts: [{ text: promptText }] }],
-        generationConfig: { maxOutputTokens: 500, temperature: 0.3 }
-    };
-    
     try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+        const res = await fetch('/api/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+                action: 'summarize',
+                payload: {
+                    title: currentDetailItem.title,
+                    url: currentDetailItem.url
+                }
+            })
         });
         const json = await res.json();
         
-        if (json.candidates && json.candidates[0]?.content?.parts?.[0]?.text) {
-            const summary = json.candidates[0].content.parts[0].text.trim();
+        if (res.ok && json.result) {
+            const summary = json.result;
             currentDetailItem.note = summary;
             saveContents();
             detailNoteDisplay.textContent = summary;
         } else {
-            console.error("Gemini AI Summarize Error:", json);
-            let reason = "이유를 알 수 없는 오류입니다.";
-            if (json.error) reason = `API 오류: ${json.error.message}`;
-            else if (json.candidates && json.candidates[0]?.finishReason) reason = `차단됨 (사유: ${json.candidates[0].finishReason})`;
-            
+            console.error("Backend AI Summarize Error:", json);
+            const reason = json.error || "이유를 알 수 없는 오류입니다.";
             detailNoteDisplay.textContent = `❌ AI 요약에 실패했습니다.\n\n상세 사유: ${reason}\n\n우측 상단의 '수정하기'를 눌러 직접 요약을 등록해 보세요.`;
         }
     } catch (e) {
